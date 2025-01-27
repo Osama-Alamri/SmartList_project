@@ -2,6 +2,8 @@ import streamlit as st
 
 st.title("SmartList")
 "\n"
+"\n"
+
 
 if "task_list" not in st.session_state:
     st.session_state["task_list"] = []
@@ -26,7 +28,7 @@ def add_task(task_title):
     else:
         st.warning("Please enter a task before adding.")
 
-LCol , MCol , RCol = st.columns([3,1,2])
+LCol , MCol , RCol = st.columns([3,1,3])
 
 with LCol:
     st.title("ChatBot")
