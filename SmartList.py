@@ -1,5 +1,6 @@
 import streamlit as st
-
+#pip3 install -U openai
+#pip install requests
 st.title("SmartList")
 "\n"
 "\n"
