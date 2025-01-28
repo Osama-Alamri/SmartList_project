@@ -1,4 +1,23 @@
 import streamlit as st
+from openai import OpenAI
+import time
+import requests
+
+# ##############################################################################################
+# client = OpenAI(api_key = open("./token.txt").read(), base_url="https://api.deepseek.com")
+
+# response = client.chat.completions.create(
+#     model="deepseek-chat",
+#     messages=[
+#         {"role": "system", "content": "You are a helpful assistant"},
+#         {"role": "user", "content": "tell me why the sky is blue"},
+#     ],
+#     stream=False
+# )
+
+# print(response.choices[0].message.content)
+
+##############################################################################################
 
 st.set_page_config(layout="wide")
 col1, col2 = st.columns(2)
@@ -11,8 +30,8 @@ with col1:
 
 
     chat_container = st.container(border=True, height= 500)
-    prompt = st.chat_input("enter a message")
 
+    prompt = st.chat_input("enter a message")
     with chat_container:
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
@@ -22,12 +41,11 @@ with col1:
             st.chat_message("user").markdown(prompt)
             st.session_state.messages.append({"role": "user", "content": prompt})
 
-        
-        response = f"Echo: {prompt}"
-        with st.chat_message("assistant"):
-            st.markdown(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            
+            response = f"Echo: {prompt}"
+            with st.chat_message("assistant"):
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
 with col2:
     st.title("To-Do List")
