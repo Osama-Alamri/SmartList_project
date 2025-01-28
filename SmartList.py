@@ -51,7 +51,8 @@ with lm:
 
 with mm:
     st.text_area("I can plan your mission for you :wink:")
-
+    if st.button("plan it 😉"):
+        print("")
 with lm:
     st.write("")
 
