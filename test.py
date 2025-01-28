@@ -11,17 +11,16 @@ with col1:
 
 
     chat_container = st.container(border=True, height= 500)
+    prompt = st.chat_input("enter a message")
 
     with chat_container:
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-
-    prompt = st.chat_input("enter a message")
-    if prompt:
-        st.chat_message("user").markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
+        if prompt:
+            st.chat_message("user").markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
 
         
         response = f"Echo: {prompt}"
@@ -48,4 +47,3 @@ with col2:
     for i , t in enumerate(st.session_state["task_list"]):
         if st.checkbox(f"{i+1}. {t}"):
             st.session_state["task_list"].remove(t)
-        
