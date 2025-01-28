@@ -1,6 +1,7 @@
 import streamlit as st
 #pip3 install -U openai
 #pip install requests
+st.set_page_config(layout="wide")
 st.title("SmartList")
 "\n"
 "\n"
@@ -29,8 +30,13 @@ def add_task(task_title):
     else:
         st.warning("Please enter a task before adding.")
 
+
+
 LCol , MCol , RCol = st.columns([3,1,3])
 
+
+
+# ai side
 with LCol:
     st.title("ChatBot")
 
@@ -58,9 +64,21 @@ with LCol:
 
         st.session_state.messages.append({"role": "assistant", "content": response})
 
+
+
+
+
+
 with MCol:
     st.title(" ")
 
+
+
+
+
+
+
+# do list side
 with RCol:
     st.title("To-Do List")
 
@@ -74,14 +92,27 @@ with RCol:
         #expander
         for task in st.session_state["task_list"]:
             with st.expander(task):
+                # total_counter = 0
+                # total_checked = 0
                 sup_task_textbox = st.text_input(f"Enter a sub-task for {task}")
                 if st.button(f"Add Sup-task to {task}"):
                     add_sup_task(sup_task_textbox, task)
-            #sup-task down the expander
                 st.checkbox(task)
+                # total_counter += 1
+
+            #sup-task down the expander
                 if task in st.session_state["suptask_list"]:
                     for sup_task in st.session_state["suptask_list"][task]:
                         st.checkbox(sup_task)
+                #         total_counter += 1
+                #     if st.checkbox(sup_task) == True:
+                #         total_checked += 1
+                # if total_counter > 0:
+                #     value = total_checked / total_counter
+                #     st.progress(value)
+            
+                    
+       
 
     
 
