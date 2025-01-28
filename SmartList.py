@@ -72,7 +72,7 @@ with LCol:
                 st.markdown(message["content"])
 
 
-        if prompt:
+        if prompt  :
             st.chat_message("user").markdown(prompt)
             st.session_state.messages.append({"role": "user", "content": prompt})
 
