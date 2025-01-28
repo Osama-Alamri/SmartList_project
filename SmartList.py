@@ -50,6 +50,7 @@ with lm:
     st.write("")
 
 with mm:
+<<<<<<< HEAD
     planer_text = st.text_area("I can plan your mission for you :wink:", key = f"planer_text" , placeholder  = "like i want learn python , i want you mange my study plan")
     if st.button("plan it :wink:" , key = f"planer_buttom"):
         if planer_text:
@@ -67,6 +68,11 @@ with mm:
         else:
             st.warning("Please provide a mission description.")
 
+=======
+    st.text_area("I can plan your mission for you :wink:")
+    if st.button("plan it 😉"):
+        print("")
+>>>>>>> 25aade937ca388093bfb6d297aa5d5a558f3a40f
 with lm:
     st.write("")
 
