@@ -1,10 +1,18 @@
 import streamlit as st
 from openai import OpenAI
+import time
+import requests
 
-# Initialize the DeepSeek client
-client = OpenAI(api_key=open("./token.txt").read().strip(), base_url="https://api.deepseek.com")
+###############################################################################################
+client = OpenAI(
+  api_key = open("./gpt_token.txt").read()
+)
 
-# Streamlit page configuration
+
+# print(completion.choices[0].message);
+
+##############################################################################################
+
 st.set_page_config(layout="wide")
 col1, col2 = st.columns(2)
 
@@ -30,21 +38,24 @@ with col1:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Make an API call to DeepSeek
+        
         try:
-            response = client.chat.completions.create(
-                model="deepseek-chat",  # Replace with your desired model name
-                messages=st.session_state.messages,
-                stream=False  # Use streaming if supported and desired
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                store=True,
+                messages=[
+                    # {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt},
+                ],
             )
-            assistant_message = response['choices'][0]['message']['content']
-
+            response = completion.choices[0].message.content
         except Exception as e:
-            assistant_message = f"Error: {str(e)}"
+            response = f"An error occurred: {str(e)}"
 
-        # Add assistant response to the session and display it
-        st.chat_message("assistant").markdown(assistant_message)
-        st.session_state.messages.append({"role": "assistant", "content": assistant_message})
+
+        with st.chat_message("assistant"):
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
 with col2:
     st.title("To-Do List")
