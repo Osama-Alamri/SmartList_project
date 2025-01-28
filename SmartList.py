@@ -36,13 +36,16 @@ with LCol:
         st.session_state.messages = []
 
     chat_container = st.container(border=True, height=600)
-
+    
     with chat_container:
+    
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
+    
 
     prompt = st.chat_input("Enter a message")
+
     if prompt:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -79,15 +82,19 @@ with RCol:
                 check_count = 0 
 
         # to make sup-task with exapnder
-                if task in st.session_state["suptask_list"]:
-                    for sup_task in st.session_state["suptask_list"][task]:
-                        total_count += 1
-                        if st.checkbox(sup_task):
-                            check_count += 1
+                for sup_task in st.session_state["suptask_list"][task]:
+                    total_count += 1
+                    if st.checkbox(sup_task):
+                        check_count += 1
                 # prograss line
                 if total_count > 0:
                     progress = check_count / total_count
-                    st.progress(progress)
+                    if progress == 1:
+                        st.write("Excellent you finish this task !")
+                        st.progress(progress)
+                    else:
+                        st.progress(progress)
+                    
 
 
 
