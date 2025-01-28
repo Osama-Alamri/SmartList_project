@@ -1,8 +1,16 @@
 import streamlit as st
+import google.generativeai as genai
+import time
+
 st.set_page_config(layout="wide")
 st.title("SmartList")
 "\n"
 "\n"
+
+genai.configure(api_key=open("./gemini.txt").read())
+model = genai.GenerativeModel("gemini-1.5-flash")
+response = model.generate_content("Explain how AI works")
+print(response.text)
 
 if "task_list" not in st.session_state:
     st.session_state["task_list"] = []
@@ -34,6 +42,41 @@ LCol , MCol , RCol = st.columns([3,1,3])
 
 with LCol:
     st.title("ChatBot")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    chat_container = st.container(border=True, height=400)
+    prompt = st.chat_input("Enter a message")
+    with chat_container:
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+
+        if prompt:
+            st.chat_message("user").markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
+
+            
+            try:
+                response = model.generate_content(prompt)
+                assistant_reply = response.text
+
+            except Exception as e:
+                response = f"An error occurred: {str(e)}"
+
+
+            with st.chat_message("assistant"):
+                    word_by_word_output = st.empty()  # Placeholder for dynamic word updates
+                    words = assistant_reply.split()
+                    displayed_text = ""
+                    for word in words:
+                        displayed_text += word + " "
+                        word_by_word_output.markdown(displayed_text)
+                        time.sleep(0.1)
+
+            st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
 
 
 with MCol:
