@@ -8,7 +8,7 @@ from pydantic_ai import Agent
 
 
 st.set_page_config(layout="wide")
-st.title(":sparkles:SmartList:sparkles:")
+st.title("SmartList :sparkles:")
 "\n"
 "\n"
 
@@ -50,7 +50,22 @@ with lm:
     st.write("")
 
 with mm:
-    st.text_area("I can plan your mission for you :wink:")
+    planer_text = st.text_area("I can plan your mission for you :wink:", key = f"planer_text" , placeholder  = "like i want learn python , i want you mange my study plan")
+    if st.button("plan it :wink:" , key = f"planer_buttom"):
+        if planer_text:
+            st.session_state.messages = []  # Clear previous chat history
+            st.session_state.messages.append({"role": "user", "content": planer_text})
+
+            try:
+                response = model.generate_content(planer_text)
+                assistant_reply = response.text
+
+                st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+
+            except Exception as e:
+                st.error(f"Error generating mission plan: {e}")
+        else:
+            st.warning("Please provide a mission description.")
 
 with lm:
     st.write("")
@@ -59,7 +74,7 @@ with lm:
 LCol , MCol , RCol = st.columns([10,1,10])
 
 with LCol:
-    st.title("ChatBot")
+    st.title("ChatBot :robot_face:")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -95,6 +110,8 @@ with LCol:
                         time.sleep(0.1)
 
             st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+    if st.button("add it to my tasks :arrow_right:"):
+        st.write
 
 
 with MCol:
@@ -102,7 +119,7 @@ with MCol:
 
 
 with RCol:
-    st.title("To-Do List")
+    st.title("To-Do List :clipboard:")
 
     to_do_container = st.container(border=False, height=1500)
     with to_do_container:
