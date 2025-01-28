@@ -21,6 +21,7 @@ if "task_list" not in st.session_state:
 if "suptask_list" not in st.session_state:
     st.session_state["suptask_list"] = {}
 
+
 def add_sup_task(sup_task_title, task_title):
     if sup_task_title:
         if task_title not in st.session_state["suptask_list"]:
@@ -32,6 +33,7 @@ def add_sup_task(sup_task_title, task_title):
 
 def add_task(task_title):
     if task_title:           
+        task = {"title": task_title, "subtasks": []} 
         st.session_state["task_list"].append(task_title)
         st.success("Task added!")
     else:
@@ -50,11 +52,10 @@ with lm:
     st.write("")
 
 with mm:
-<<<<<<< HEAD
     planer_text = st.text_area("I can plan your mission for you :wink:", key = f"planer_text" , placeholder  = "like i want learn python , i want you mange my study plan")
     if st.button("plan it :wink:" , key = f"planer_buttom"):
         if planer_text:
-            st.session_state.messages = []  # Clear previous chat history
+            st.session_state.messages = []  # Clear previous chat history````
             st.session_state.messages.append({"role": "user", "content": planer_text})
 
             try:
@@ -68,11 +69,6 @@ with mm:
         else:
             st.warning("Please provide a mission description.")
 
-=======
-    st.text_area("I can plan your mission for you :wink:")
-    if st.button("plan it 😉"):
-        print("")
->>>>>>> 25aade937ca388093bfb6d297aa5d5a558f3a40f
 with lm:
     st.write("")
 
@@ -99,6 +95,14 @@ with LCol:
 
             
             try:
+                task_data = "\n".join([
+                        f"{idx + 1}. {task['title']} (Duration: {task.get('duration', 'N/A')})"
+                        for idx, task in enumerate(st.session_state["task_list"])
+                    ])
+                chatbot_prompt = (
+                    f"Here are the tasks:\n{task_data}\n\nUser said: {prompt}\n"
+                    "Please organize or respond based on these tasks."
+                )
                 response = model.generate_content(prompt)
                 assistant_reply = response.text
 
