@@ -1,5 +1,4 @@
 import streamlit as st
-
 st.set_page_config(layout="wide")
 st.title("SmartList")
 "\n"
@@ -26,35 +25,15 @@ def add_task(task_title):
         st.success("Task added!")
     else:
         st.warning("Please enter a task before adding.")
+        
+def delete_task(task_title):
+    st.session_state["task_list"].remove(task_title)
+    st.success("delete this task success")
 
 LCol , MCol , RCol = st.columns([3,1,3])
 
 with LCol:
     st.title("ChatBot")
-
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    chat_container = st.container(border=True, height=600)
-    
-    with chat_container:
-    
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-    
-
-    prompt = st.chat_input("Enter a message")
-
-    if prompt:
-        st.chat_message("user").markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        response = f"Echo: {prompt}"
-        with st.chat_message("assistant"):
-            st.markdown(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 with MCol:
@@ -74,6 +53,8 @@ with RCol:
         #expander
         for task in st.session_state["task_list"]:   
             with st.expander(task):
+                if st.button("delete this task"):
+                    delete_task(task)
                 sup_task_textbox = st.text_input(f"Enter a sub-task for {task}") 
                 if st.button(f"Add Sup-task to {task}"):
                     add_sup_task(sup_task_textbox, task) # add sup-task
@@ -102,5 +83,3 @@ with RCol:
 # "\n"
 # "\n"
 # st.write("out side 1")
-
-         
