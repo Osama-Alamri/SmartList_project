@@ -1,51 +1,50 @@
 import streamlit as st
 from openai import OpenAI
-import time
-import requests
 
-# ##############################################################################################
-# client = OpenAI(api_key = open("./token.txt").read(), base_url="https://api.deepseek.com")
+# Initialize the DeepSeek client
+client = OpenAI(api_key=open("./token.txt").read().strip(), base_url="https://api.deepseek.com")
 
-# response = client.chat.completions.create(
-#     model="deepseek-chat",
-#     messages=[
-#         {"role": "system", "content": "You are a helpful assistant"},
-#         {"role": "user", "content": "tell me why the sky is blue"},
-#     ],
-#     stream=False
-# )
-
-# print(response.choices[0].message.content)
-
-##############################################################################################
-
+# Streamlit page configuration
 st.set_page_config(layout="wide")
 col1, col2 = st.columns(2)
 
 with col1:
     st.title("ChatBot")
 
+    # Initialize chat messages
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-
-    chat_container = st.container(border=True, height= 500)
-
-    prompt = st.chat_input("enter a message")
+    # Chat container UI
+    chat_container = st.container()
     with chat_container:
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-        if prompt:
-            st.chat_message("user").markdown(prompt)
-            st.session_state.messages.append({"role": "user", "content": prompt})
+    # Input prompt from user
+    prompt = st.chat_input("Enter a message")
 
-            
-            response = f"Echo: {prompt}"
-            with st.chat_message("assistant"):
-                st.markdown(response)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+    if prompt:
+        # Add user message to the session
+        st.chat_message("user").markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Make an API call to DeepSeek
+        try:
+            response = client.chat.completions.create(
+                model="deepseek-chat",  # Replace with your desired model name
+                messages=st.session_state.messages,
+                stream=False  # Use streaming if supported and desired
+            )
+            assistant_message = response['choices'][0]['message']['content']
+
+        except Exception as e:
+            assistant_message = f"Error: {str(e)}"
+
+        # Add assistant response to the session and display it
+        st.chat_message("assistant").markdown(assistant_message)
+        st.session_state.messages.append({"role": "assistant", "content": assistant_message})
 
 with col2:
     st.title("To-Do List")
