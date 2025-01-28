@@ -1,16 +1,19 @@
 import streamlit as st
-import google.generativeai as genai
+from openai import OpenAI
 import time
+import requests
+import google.generativeai as genai
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent
+
 
 st.set_page_config(layout="wide")
-st.title("SmartList")
+st.title(":sparkles:SmartList:sparkles:")
 "\n"
 "\n"
 
 genai.configure(api_key=open("./gemini.txt").read())
 model = genai.GenerativeModel("gemini-1.5-flash")
-response = model.generate_content("Explain how AI works")
-print(response.text)
 
 if "task_list" not in st.session_state:
     st.session_state["task_list"] = []
@@ -36,9 +39,24 @@ def add_task(task_title):
         
 def delete_task(task_title):
     st.session_state["task_list"].remove(task_title)
-    st.success("delete this task success")
+    if task_title in st.session_state["suptask_list"]:
+        del st.session_state["suptask_list"][task_title]
+    st.success(f"Task '{task_title}' deleted successfully.")
 
-LCol , MCol , RCol = st.columns([3,1,3])
+
+lm , mm , rm = st.columns([1,2,1])
+
+with lm:
+    st.write("")
+
+with mm:
+    st.text_area("I can plan your mission for you :wink:")
+
+with lm:
+    st.write("")
+
+
+LCol , MCol , RCol = st.columns([10,1,10])
 
 with LCol:
     st.title("ChatBot")
@@ -46,7 +64,7 @@ with LCol:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    chat_container = st.container(border=True, height=400)
+    chat_container = st.container(border=True, height=500)
     prompt = st.chat_input("Enter a message")
     with chat_container:
         for message in st.session_state.messages:
@@ -86,27 +104,30 @@ with MCol:
 with RCol:
     st.title("To-Do List")
 
-    to_do_container = st.container(border=False, height=900)
+    to_do_container = st.container(border=False, height=1500)
     with to_do_container:
-        task_textbox = st.text_input("Enter task: ")
+        task_textbox = st.text_input("Enter task: ", key="task_input")
         if st.button("Add task"):
-            add_task(task_textbox)
+            add_task(st.session_state["task_input"])
+
         st.write("Tasks: ")
  
         #expander
         for task in st.session_state["task_list"]:   
             with st.expander(task):
-                if st.button("delete this task"):
+                if st.button("delete this task", key=f"delete_{task}"):
                     delete_task(task)
+                    st.experimental_rerun()
+
                 sup_task_textbox = st.text_input(f"Enter a sub-task for {task}") 
-                if st.button(f"Add Sup-task to {task}"):
+                if st.button(f"Add Sup-task to {task}", key=f"add_suptask_{task}"):
                     add_sup_task(sup_task_textbox, task) # add sup-task
 
                 total_count = 0
                 check_count = 0 
-
+        
         # to make sup-task with exapnder
-                for sup_task in st.session_state["suptask_list"][task]:
+                for sup_task in st.session_state["suptask_list"].get(task, []):
                     total_count += 1
                     if st.checkbox(sup_task):
                         check_count += 1
