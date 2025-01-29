@@ -208,14 +208,7 @@ with RCol:
 
                     except Exception as e:
                         response = f"An error occurred: {str(e)}"
-<<<<<<< HEAD
-
-            # send to chatbot area
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply}) 
-=======
-                  
 
             # send to chatbot area
                     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
->>>>>>> 1b9aea4b75dfdf647ed8fb8952d258ec9a2dfc0c
                     st.rerun()
