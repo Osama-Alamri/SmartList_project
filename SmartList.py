@@ -134,7 +134,7 @@ with LCol:
                 if i == 0:  # First non-empty line
                     first_line = line
                     add_task(first_line)  # Add first line as task
-                elif i == 1:  # Skip the second line
+                elif i == 2:  # Skip the second line
                     continue
                 else:  # For other lines, treat them as subtasks
                     add_sup_task(line, first_line)
