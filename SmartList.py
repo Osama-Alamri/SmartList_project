@@ -96,11 +96,9 @@ with LCol:
                     f"{idx + 1}. {task['title']}" 
                     for idx, task in enumerate(st.session_state["task_list"])
                 ])
-                chat_history = "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
                 chatbot_prompt = (
-                    f"Here is the conversation history:\n{chat_history}\nUser: {prompt}\nAssistant:"
+                    f"help the user about {prompt} don't talk a lot "
                 )
-                response = model.generate_content(chatbot_prompt)
 
                 response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
@@ -203,16 +201,7 @@ with RCol:
 
                     except Exception as e:
                         response = f"An error occurred: {str(e)}"
-                    with st.chat_message("assistant"):
-                        word_by_word_output = st.empty() # Placeholder for dynamic word updates
-                        words = assistant_reply.split()
-                        displayed_text = ""
-                        for word in words:
-                            displayed_text += word + " "
-                            word_by_word_output.markdown(displayed_text)
-                            time.sleep(0.1)
-
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
 
             # send to chatbot area
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply}) 
                     st.rerun()
