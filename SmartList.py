@@ -96,9 +96,11 @@ with LCol:
                     f"{idx + 1}. {task['title']}" 
                     for idx, task in enumerate(st.session_state["task_list"])
                 ])
+                chat_history = "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
                 chatbot_prompt = (
-                    f"help the user about {prompt} don't talk a lot "
+                    f"Here is the conversation history:\n{chat_history}\nUser: {prompt}\nAssistant:"
                 )
+                response = model.generate_content(chatbot_prompt)
 
                 response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
