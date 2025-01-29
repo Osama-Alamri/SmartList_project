@@ -100,7 +100,6 @@ with LCol:
                 chatbot_prompt = (
                     f"Here is the conversation history:\n{chat_history}\nUser: {prompt}\nAssistant:"
                 )
-                response = model.generate_content(chatbot_prompt)
 
                 response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
@@ -161,33 +160,40 @@ with RCol:
 
         st.write("Tasks: ")
     
-        #make expander's
         for task in st.session_state["task_list"]: 
             with st.expander(task["title"]): 
                 if st.button("delete this task", key=f"delete_{task['title']}"):
                     delete_task(task["title"])
-                    st.session_state.rerun_trigger += 1  # Trigger rerun
+                    st.session_state.rerun_trigger += 1  
 
+        
                 sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}") 
                 if st.button(f"Add Sup-task to {task['title']}", key=f"add_suptask_{task['title']}"):
-                    add_sup_task(sup_task_textbox, task["title"]) # add sup-task
-
-            # loading the prograss 
+                    add_sup_task(sup_task_textbox, task["title"]) 
                 total_count = 0
                 check_count = 0 
     
                 for sup_task in st.session_state["suptask_list"].get(task["title"], []):
                     total_count += 1
-                    if st.checkbox(sup_task):
+                    if st.checkbox(sup_task, key=f"checkbox_{task['title']}_{sup_task}"):
                         check_count += 1
 
                 if total_count > 0:
                     progress = check_count / total_count
+                    st.progress(progress)  # Display progress bar
+                    
+                    progress_text = f"Progress: {int(progress * 100)}%"
+                    task_completed = False
                     if progress == 1:
-                        st.write("Excellent! You finished this task!")
-                    st.progress(progress)
+                        progress_text = f"✅ {task['title']} Completed!"
+                        task_completed = True  # Mark as completed
+                        
 
-            # ai helper -> take task and sup-task to chatbot
+                    st.write(progress_text) 
+                    
+
+
+
                 if st.button("AI HELP :robot_face:", key=f"ai_help_{task['title']}"):
                     chatbot_prompt = f"I have a task called '{task['title']}'."
                     if st.session_state["suptask_list"].get(task["title"]):
@@ -203,16 +209,8 @@ with RCol:
 
                     except Exception as e:
                         response = f"An error occurred: {str(e)}"
-                    with st.chat_message("assistant"):
-                        word_by_word_output = st.empty() # Placeholder for dynamic word updates
-                        words = assistant_reply.split()
-                        displayed_text = ""
-                        for word in words:
-                            displayed_text += word + " "
-                            word_by_word_output.markdown(displayed_text)
-                            time.sleep(0.1)
-
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+                  
 
             # send to chatbot area
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
                     st.rerun()
