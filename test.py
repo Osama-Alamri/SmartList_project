@@ -5,7 +5,8 @@ import requests
 import google.generativeai as genai
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
-
+from typing import List, Optional
+import json
 
 st.set_page_config(layout="wide")
 st.title(":sparkles:SmartList:sparkles:")
@@ -24,6 +25,19 @@ if "suptask_list" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+
+class SubTask(BaseModel):
+    """SubTask."""
+    title: str = Field("list of a single word title of the SubTask")
+
+class Task(BaseModel):
+    """Task."""
+    title: str = Field("a single word title of the Task")
+    subtasks: List[SubTask] = []
+    
+
+
+    
 
 def add_task(task_title):
     if task_title:
@@ -57,9 +71,60 @@ with lm:
     st.write("")
 
 with mm:
-    st.text_area("I can plan your mission for you :wink:")
-    if st.button("plan it 😉"):
-        print("")
+    planer_text = st.text_area("I can plan your mission for you :wink:", key="planer_text", placeholder="e.g. I want to learn Python or manage my study plan")
+    
+    if st.button("Plan it :wink:", key="planer_buttom"):
+        if planer_text:
+            st.session_state.messages = []  # Clear previous chat history
+            st.session_state.messages.append({"role": "user", "content": planer_text})
+
+            try:
+                # Updated prompt to request JSON output
+                chatbot_prompt = f"""
+                Here is the task: {planer_text}
+                Please provide a response in **valid JSON format**.
+                The response should contain a main task with at most 7 sub-tasks.
+                Example format:
+                {{
+                    "title": "Main Task",
+                    "subtasks": [
+                        {{"title": "Subtask 1"}},
+                        {{"title": "Subtask 2"}},
+                        ...
+                    ]
+                }}
+                Ensure that the response is **pure JSON only** without additional text.
+                """
+
+                response = model.generate_content(chatbot_prompt)
+                assistant_reply = response.text.strip()
+
+                # Debugging: Print response before parsing
+                st.write("AI Response:", assistant_reply)
+
+                # Ensure the response is not empty
+                if not assistant_reply:
+                    raise ValueError("Received an empty response from the AI model.")
+
+                try:
+                    # Attempt to parse the JSON response
+                    assistant_tasks = json.loads(assistant_reply)
+
+                    # Ensure at most 7 subtasks
+                    if len(assistant_tasks.get("subtasks", [])) > 7:
+                        assistant_tasks["subtasks"] = assistant_tasks["subtasks"][:7]
+
+                    task = Task(**assistant_tasks)  # Convert to Pydantic model
+                    st.session_state.messages.append({"role": "assistant", "content": json.dumps(assistant_tasks, indent=2)})
+
+                except json.JSONDecodeError:
+                    st.error("Error: AI response is not in valid JSON format. Please try again.")
+
+            except Exception as e:
+                st.error(f"Error generating mission plan: {e}")
+        else:
+            st.warning("Please provide a mission description.")
+
 with lm:
     st.write("")
 
