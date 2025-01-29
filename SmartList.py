@@ -120,23 +120,29 @@ with LCol:
             # Check the latest assistant message to extract tasks and subtasks
         if st.session_state.messages:
             last_message = st.session_state.messages[-1]["content"]
-            
-            # Split the message into lines assuming each line contains a task or subtask
+
             lines = last_message.split("\n")
-            
-            current_task = None
-            for line in lines:
-                line = line.strip()
-                if line.startswith("##"):   # Detect main task (Markdown format)
-                    current_task = line.lstrip("#").strip()  # Remove markdown symbols
-                    add_task(current_task)
-                elif line.startswith("-") and current_task:  # Detect sub-task (Markdown format)
-                    subtask = line.lstrip("-").strip()
-                    add_sup_task(subtask, current_task)
-            
-            st.success("Tasks and subtasks added from chatbot response!")
-        else:
-            st.warning("No response from the chatbot to add as tasks.")
+
+            first_line = None  # To store the first line
+
+            for i, line in enumerate(lines):
+                line = line.strip()  # Clean up any leading/trailing spaces
+                
+                if not line:  # Skip empty lines
+                    continue
+                
+                if i == 0:  # First non-empty line
+                    first_line = line
+                    add_task(first_line)  # Add first line as task
+                elif i == 1:  # Skip the second line
+                    continue
+                else:  # For other lines, treat them as subtasks
+                    add_sup_task(line, first_line)
+
+                
+                st.success("Tasks and subtasks added from chatbot response!")
+            else:
+                st.warning("No response from the chatbot to add as tasks.")
 with MCol:
     st.title(" ")
 
