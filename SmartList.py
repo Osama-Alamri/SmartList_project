@@ -1,14 +1,9 @@
 import streamlit as st
-from openai import OpenAI
-import time
-import requests
 import google.generativeai as genai
-from pydantic import BaseModel, Field
-from pydantic_ai import Agent
-
+import time
 
 st.set_page_config(layout="wide")
-st.title("SmartList :sparkles:")
+st.title(":sparkles:SmartList:sparkles:")
 "\n"
 "\n"
 
@@ -21,6 +16,8 @@ if "task_list" not in st.session_state:
 if "suptask_list" not in st.session_state:
     st.session_state["suptask_list"] = {}
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 def add_sup_task(sup_task_title, task_title):
     if sup_task_title:
@@ -32,15 +29,15 @@ def add_sup_task(sup_task_title, task_title):
         st.warning("Please enter a sup-task before adding.")
 
 def add_task(task_title):
-    if task_title:           
+    if task_title:
         task = {"title": task_title, "subtasks": []} 
-        st.session_state["task_list"].append(task_title)
+        st.session_state["task_list"].append(task)
         st.success("Task added!")
     else:
         st.warning("Please enter a task before adding.")
-        
+
 def delete_task(task_title):
-    st.session_state["task_list"].remove(task_title)
+    st.session_state["task_list"] = [task for task in st.session_state["task_list"] if task["title"] != task_title]
     if task_title in st.session_state["suptask_list"]:
         del st.session_state["suptask_list"][task_title]
     st.success(f"Task '{task_title}' deleted successfully.")
@@ -52,14 +49,17 @@ with lm:
     st.write("")
 
 with mm:
-    planer_text = st.text_area("I can plan your mission for you :wink:", key = f"planer_text" , placeholder  = "like i want learn python , i want you mange my study plan")
+    planer_text = st.text_area("I can plan your mission for you :wink:", key = f"planer_text" , placeholder = "like i want learn python , i want you mange my study plan")
     if st.button("plan it :wink:" , key = f"planer_buttom"):
         if planer_text:
-            st.session_state.messages = []  # Clear previous chat history````
+            st.session_state.messages = [] # Clear previous chat history````
             st.session_state.messages.append({"role": "user", "content": planer_text})
 
-            try:
-                response = model.generate_content(planer_text)
+            try: #chat prompt for text area (easy details)
+                chatbot_prompt = (
+                    f"give it to me easy in task and sup-task format only (without code and details and description) Headlines only give me at most 1 main task for this topic {planer_text}"
+                )
+                response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
 
                 st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
@@ -78,8 +78,6 @@ LCol , MCol , RCol = st.columns([10,1,10])
 with LCol:
     st.title("ChatBot :robot_face:")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
 
     chat_container = st.container(border=True, height=500)
     prompt = st.chat_input("Enter a message")
@@ -89,21 +87,20 @@ with LCol:
                 st.markdown(message["content"])
 
 
-        if prompt  :
+        if prompt :
             st.chat_message("user").markdown(prompt)
             st.session_state.messages.append({"role": "user", "content": prompt})
 
-            
             try:
                 task_data = "\n".join([
-                        f"{idx + 1}. {task['title']} (Duration: {task.get('duration', 'N/A')})"
-                        for idx, task in enumerate(st.session_state["task_list"])
-                    ])
+                    f"{idx + 1}. {task['title']}" 
+                    for idx, task in enumerate(st.session_state["task_list"])
+                ])
                 chatbot_prompt = (
-                    f"Here are the tasks:\n{task_data}\n\nUser said: {prompt}\n"
-                    "Please organize or respond based on these tasks."
+                    f"help me on this task explain me this {prompt}"
+
                 )
-                response = model.generate_content(prompt)
+                response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
 
             except Exception as e:
@@ -111,18 +108,17 @@ with LCol:
 
 
             with st.chat_message("assistant"):
-                    word_by_word_output = st.empty()  # Placeholder for dynamic word updates
-                    words = assistant_reply.split()
-                    displayed_text = ""
-                    for word in words:
-                        displayed_text += word + " "
-                        word_by_word_output.markdown(displayed_text)
-                        time.sleep(0.1)
+                word_by_word_output = st.empty() # Placeholder for dynamic word updates
+                words = assistant_reply.split()
+                displayed_text = ""
+                for word in words:
+                    displayed_text += word + " "
+                    word_by_word_output.markdown(displayed_text)
+                    time.sleep(0.1)
 
             st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
     if st.button("add it to my tasks :arrow_right:"):
         st.write
-
 
 with MCol:
     st.title(" ")
@@ -138,39 +134,47 @@ with RCol:
             add_task(st.session_state["task_input"])
 
         st.write("Tasks: ")
- 
-        #expander
-        for task in st.session_state["task_list"]:   
-            with st.expander(task):
-                if st.button("delete this task", key=f"delete_{task}"):
-                    delete_task(task)
-                    st.experimental_rerun()
+    
+        #make expander's
+        for task in st.session_state["task_list"]: 
+            with st.expander(task["title"]): 
+                if st.button("delete this task", key=f"delete_{task['title']}"):
+                    delete_task(task["title"])
+                    st.session_state.rerun_trigger += 1  # Trigger rerun
 
-                sup_task_textbox = st.text_input(f"Enter a sub-task for {task}") 
-                if st.button(f"Add Sup-task to {task}", key=f"add_suptask_{task}"):
-                    add_sup_task(sup_task_textbox, task) # add sup-task
+                sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}") 
+                if st.button(f"Add Sup-task to {task['title']}", key=f"add_suptask_{task['title']}"):
+                    add_sup_task(sup_task_textbox, task["title"]) # add sup-task
 
+            # loading the prograss 
                 total_count = 0
                 check_count = 0 
-        
-        # to make sup-task with exapnder
-                for sup_task in st.session_state["suptask_list"].get(task, []):
+    
+                for sup_task in st.session_state["suptask_list"].get(task["title"], []):
                     total_count += 1
                     if st.checkbox(sup_task):
                         check_count += 1
-                # prograss line
+
                 if total_count > 0:
                     progress = check_count / total_count
                     if progress == 1:
-                        st.write("Excellent you finish this task !")
-                        st.progress(progress)
-                    else:
-                        st.progress(progress)
-                    
+                        st.write("Excellent! You finished this task!")
+                    st.progress(progress)
 
+            # ai helper -> take task and sup-task to chatbot
+                if st.button("AI HELP :robot_face:", key=f"ai_help_{task['title']}"):
+                    chatbot_prompt = f"I have a task called '{task['title']}'."
+                    if st.session_state["suptask_list"].get(task["title"]):
+                        chatbot_prompt += f" It has the following subtasks: {', '.join(st.session_state['suptask_list'][task['title']])}"
+                    st.session_state.messages.append({"role": "user", "content": chatbot_prompt})
 
+                    try:
+                        response = model.generate_content(chatbot_prompt)
+                        assistant_reply = response.text
 
-# "\n"
-# "\n"
-# "\n"
-# st.write("out side 1")
+                    except Exception as e:
+                        response = f"An error occurred: {str(e)}"
+
+            # send to chatbot area
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply}) 
+                    st.session_state.rerun_trigger += 1
