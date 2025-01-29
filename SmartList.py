@@ -165,12 +165,10 @@ with RCol:
             with st.expander(f"✅ {task['title']}" if task.get("completed", False) else task["title"]): 
                 if st.button("delete this task", key=f"delete_{task['title']}"):
                     delete_task(task["title"])
-                    st.session_state.rerun_trigger += 1 
-
         
                 sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}") 
                 if st.button(f"Add Sup-task to {task['title']}", key=f"add_suptask_{task['title']}"):
-                    add_sup_task(sup_task_textbox, task["title"]) 
+                    add_sup_task(sup_task_textbox, task["title"])
                 total_count = 0
                 check_count = 0 
     
@@ -196,7 +194,7 @@ with RCol:
                     if progress == 1 and not task.get("completed", False):
                         task["completed"] = True  # Mark the task as completed
                         st.success(f"✅ {task['title']} Completed!")
-                        
+                        st.rerun()
 
                     st.write(progress_text) 
                     
