@@ -97,8 +97,7 @@ with LCol:
                     for idx, task in enumerate(st.session_state["task_list"])
                 ])
                 chatbot_prompt = (
-                    f"help me on this task explain me this {prompt}"
-
+                    f"help the user about {prompt} don't talk a lot"
                 )
                 response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
@@ -169,6 +168,9 @@ with RCol:
                     st.session_state.messages.append({"role": "user", "content": chatbot_prompt})
 
                     try:
+                        chatbot_prompt = (
+                        f"help and explain about {chatbot_prompt} and do what user want"
+                             )
                         response = model.generate_content(chatbot_prompt)
                         assistant_reply = response.text
 
@@ -177,4 +179,4 @@ with RCol:
 
             # send to chatbot area
                     st.session_state.messages.append({"role": "assistant", "content": assistant_reply}) 
-                    st.session_state.rerun_trigger += 1
+                    st.rerun()
