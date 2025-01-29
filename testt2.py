@@ -160,6 +160,58 @@ with RCol:
             add_task(st.session_state["task_input"])
 
         st.write("Tasks: ")
+
+        for task in st.session_state["task_list"]: 
+            with st.expander(f"✅ {task['title']}" if task.get("completed", False) else task["title"]): 
+                if st.button("delete this task", key=f"delete_{task['title']}"):
+                    delete_task(task["title"])
+                    st.session_state.rerun_trigger 
+
+        
+                # add sub task inside expander
+                sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}")
+                if st.button(f"Add Sup-task to {task['title']}", key=f"add_suptask_{task['title']}"):
+                    add_sup_task(sup_task_textbox, task["title"])
+                
+
+                total_count = 0
+                check_count = 0 
+    
+                for sup_task in st.session_state["suptask_list"].get(task["title"], []):
+                    total_count += 1
+                    checkbox_key = f"checkbox_{task['title']}_{sup_task}"
+
+                    if checkbox_key not in st.session_state:
+                        st.session_state[checkbox_key] = False  # Ensure the checkbox state is stored
+
+                    checked = st.checkbox(sup_task, key=checkbox_key)
+                    
+                    if checked:
+                        check_count += 1
+
+                if total_count > 0:
+                    progress = check_count / total_count
+                    st.progress(progress)  # Display progress bar
+                    
+                    progress_text = f"Progress: {int(progress * 100)}%"
+                    # task_completed = False
+
+                    if progress == 1 and not task.get("completed", False):
+                        task["completed"] = True  # Mark the task as completed
+                        st.success(f"✅ {task['title']} Completed!")
+                        
+
+                    st.write(progress_text) 
+                    
+                    
+
+
+    with to_do_container:
+        task_textbox = st.text_input("Enter task: ", key="task_input")
+        if st.button("Add task"):
+            add_task(st.session_state["task_input"])
+
+        st.write("Tasks: ")
     
         for task in st.session_state["task_list"]: 
             with st.expander(task["title"]): 
@@ -173,25 +225,6 @@ with RCol:
                 if st.button(f"Add Sup-task to {task['title']}", key=f"add_suptask_{task['title']}"):
                     add_sup_task(sup_task_textbox, task["title"])
 
-                if st.button("AI HELP :robot_face:", key=f"ai_help_{task['title']}"):
-                    chatbot_prompt = f"I have a task called '{task['title']}'."
-                    if st.session_state["suptask_list"].get(task["title"]):
-                        chatbot_prompt += f" It has the following subtasks: {', '.join(st.session_state['suptask_list'][task['title']])}"
-                    st.session_state.messages.append({"role": "user", "content": chatbot_prompt})
-
-                    try:
-                        chatbot_prompt = (
-                        f"help and explain about {chatbot_prompt} and do what user want"
-                            )
-                        response = model.generate_content(chatbot_prompt)
-                        assistant_reply = response.text
-
-                    except Exception as e:
-                        response = f"An error occurred: {str(e)}"
-
-                    # send to chatbot area
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
-                    st.rerun()
 
 
                 # delete sub task
@@ -227,6 +260,10 @@ with RCol:
 
                     st.write(progress_text) 
                     
+
+
+
+
 
 
 
