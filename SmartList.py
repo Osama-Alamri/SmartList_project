@@ -30,7 +30,7 @@ def add_sup_task(sup_task_title, task_title):
 
 def add_task(task_title):
     if task_title:
-        task = {"title": task_title, "subtasks": []} 
+        task = {"title": task_title, "subtasks": [], "completed": False} 
         st.session_state["task_list"].append(task)
         st.success("Task added!")
     else:
@@ -162,10 +162,10 @@ with RCol:
         st.write("Tasks: ")
     
         for task in st.session_state["task_list"]: 
-            with st.expander(task["title"]): 
+            with st.expander(f"✅ {task['title']}" if task.get("completed", False) else task["title"]): 
                 if st.button("delete this task", key=f"delete_{task['title']}"):
                     delete_task(task["title"])
-                    st.session_state.rerun_trigger += 1  
+                    st.session_state.rerun_trigger += 1 
 
         
                 sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}") 
@@ -176,7 +176,14 @@ with RCol:
     
                 for sup_task in st.session_state["suptask_list"].get(task["title"], []):
                     total_count += 1
-                    if st.checkbox(sup_task, key=f"checkbox_{task['title']}_{sup_task}"):
+                    checkbox_key = f"checkbox_{task['title']}_{sup_task}"
+
+                    if checkbox_key not in st.session_state:
+                        st.session_state[checkbox_key] = False  # Ensure the checkbox state is stored
+
+                    checked = st.checkbox(sup_task, key=checkbox_key)
+                    
+                    if checked:
                         check_count += 1
 
                 if total_count > 0:
@@ -184,13 +191,15 @@ with RCol:
                     st.progress(progress)  # Display progress bar
                     
                     progress_text = f"Progress: {int(progress * 100)}%"
-                    task_completed = False
-                    if progress == 1:
-                        progress_text = f"✅ {task['title']} Completed!"
-                        task_completed = True  # Mark as completed
+                    # task_completed = False
+
+                    if progress == 1 and not task.get("completed", False):
+                        task["completed"] = True  # Mark the task as completed
+                        st.success(f"✅ {task['title']} Completed!")
                         
 
                     st.write(progress_text) 
+                    
                     
 
 
