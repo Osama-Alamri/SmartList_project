@@ -1,16 +1,15 @@
 import streamlit as st
-import time
 import google.generativeai as genai
+import time
 
-# Configure Streamlit
 st.set_page_config(layout="wide")
 st.title(":sparkles:SmartList:sparkles:")
+"\n"
+"\n"
 
-# Configure GenAI
 genai.configure(api_key=open("./gemini.txt").read())
 model = genai.GenerativeModel("gemini-1.5-flash")
 
-# Initialize session state
 if "task_list" not in st.session_state:
     st.session_state["task_list"] = []
 
@@ -18,93 +17,183 @@ if "suptask_list" not in st.session_state:
     st.session_state["suptask_list"] = {}
 
 if "messages" not in st.session_state:
-    st.session_state["messages"] = []
+    st.session_state.messages = []
 
-# Functions
+def add_sup_task(sup_task_title, task_title):
+    if sup_task_title:
+        if task_title not in st.session_state["suptask_list"]:
+            st.session_state["suptask_list"][task_title] = []
+        st.session_state["suptask_list"][task_title].append(sup_task_title)
+        st.success(f"Sup-task {sup_task_title} added under {task_title} !")
+    else:
+        st.warning("Please enter a sup-task before adding.")
+
 def add_task(task_title):
     if task_title:
-        task = {"title": task_title, "duration": None, "subtasks": []}
+        task = {"title": task_title, "subtasks": []} 
         st.session_state["task_list"].append(task)
         st.success("Task added!")
     else:
         st.warning("Please enter a task before adding.")
 
 def delete_task(task_title):
-    st.session_state["task_list"] = [
-        task for task in st.session_state["task_list"] if task["title"] != task_title
-    ]
+    st.session_state["task_list"] = [task for task in st.session_state["task_list"] if task["title"] != task_title]
     if task_title in st.session_state["suptask_list"]:
         del st.session_state["suptask_list"][task_title]
     st.success(f"Task '{task_title}' deleted successfully.")
 
-def add_sup_task(sup_task_title, task_title):
-    if sup_task_title:
-        for task in st.session_state["task_list"]:
-            if task["title"] == task_title:
-                task["subtasks"].append(sup_task_title)
-        st.success(f"Sub-task '{sup_task_title}' added under '{task_title}'!")
-    else:
-        st.warning("Please enter a sub-task before adding.")
 
-# Layout
-LCol, _, RCol = st.columns([10, 1, 10])
+lm , mm , rm = st.columns([1,2,1])
 
-# Left Column - Chatbot
-with LCol:
-    st.title("ChatBot")
-    chat_container = st.container()
-    prompt = st.chat_input("Enter a message")
+with lm:
+    st.write("")
 
-    with chat_container:
-        for message in st.session_state["messages"]:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+with mm:
+    planer_text = st.text_area("I can plan your mission for you :wink:", key = f"planer_text" , placeholder = "like i want learn python , i want you mange my study plan")
+    if st.button("plan it :wink:" , key = f"planer_buttom"):
+        if planer_text:
+            st.session_state.messages = [] # Clear previous chat history````
+            st.session_state.messages.append({"role": "user", "content": planer_text})
 
-        if prompt:
-            st.chat_message("user").markdown(prompt)
-            st.session_state["messages"].append({"role": "user", "content": prompt})
-
-            try:
-                # Pass task list for processing
-                task_data = "\n".join(
-                    [
-                        f"{idx + 1}. {task['title']} (Duration: {task.get('duration', 'N/A')})"
-                        for idx, task in enumerate(st.session_state["task_list"])
-                    ]
-                )
+            try: #chat prompt for text area (easy details)
                 chatbot_prompt = (
-                    f"Here are the tasks:\n{task_data}\n\nUser said: {prompt}\n"
-                    "Please organize or respond based on these tasks."
+                    f"give it to me easy in task and sup-task format only (without code and details and description) Headlines only give me at most 1 task for this topic {planer_text}"
                 )
                 response = model.generate_content(chatbot_prompt)
                 assistant_reply = response.text
+
+                st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+
             except Exception as e:
-                assistant_reply = f"An error occurred: {str(e)}"
+                st.error(f"Error generating mission plan: {e}")
+        else:
+            st.warning("Please provide a mission description.")
 
-            st.chat_message("assistant").markdown(assistant_reply)
-            st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
+with lm:
+    st.write("")
 
-# Right Column - To-Do List
+
+LCol , MCol , RCol = st.columns([10,1,10])
+
+with LCol:
+    st.title("ChatBot :robot_face:")
+
+
+    chat_container = st.container(border=True, height=500)
+    prompt = st.chat_input("Enter a message")
+    with chat_container:
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+
+        if prompt :
+            st.chat_message("user").markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
+
+            try:
+                task_data = "\n".join([
+                    f"{idx + 1}. {task['title']}" 
+                    for idx, task in enumerate(st.session_state["task_list"])
+                ])
+                chatbot_prompt = (
+    f"Give me tasks and sub-tasks in a structured format. "
+    f"Use this format: '1. Task Title' and '- Sub-task Title' under it. "
+    f"Only return tasks and subtasks, no extra text."
+)
+
+                response = model.generate_content(chatbot_prompt)
+                assistant_reply = response.text
+
+            except Exception as e:
+                response = f"An error occurred: {str(e)}"
+
+
+            with st.chat_message("assistant"):
+                word_by_word_output = st.empty() # Placeholder for dynamic word updates
+                words = assistant_reply.split()
+                displayed_text = ""
+                for word in words:
+                    displayed_text += word + " "
+                    word_by_word_output.markdown(displayed_text)
+                    time.sleep(0.1)
+
+            st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+    if st.button("add it to my tasks :arrow_right:"):
+        if assistant_reply:
+            # Split response into tasks and subtasks
+            task_lines = assistant_reply.strip().split("\n")
+            
+            current_task = None  # Track the current task
+
+            for line in task_lines:
+                line = line.strip()
+                if line and line[0].isdigit():  # Main task (e.g., "1. Learn Python")
+                    task_title = line.split(". ", 1)[1]  # Extract the task title after the number
+                    add_task(task_title)
+                    current_task = task_title  # Set current task
+
+                elif line.startswith("-") and current_task:  # Subtask (e.g., "- Install Python")
+                    sub_task_title = line.lstrip("-").strip()
+                    add_sup_task(sub_task_title, current_task)  # Attach to the last detected task
+                    
+            st.success("Tasks and subtasks added to your To-Do list!")
+
+with MCol:
+    st.title(" ")
+
+
 with RCol:
-    st.title("To-Do List")
-    task_textbox = st.text_input("Enter task:")
-    if st.button("Add Task"):
-        add_task(task_textbox)
+    st.title("To-Do List :clipboard:")
 
-    for task in st.session_state["task_list"]:
-        with st.expander(task["title"]):
-            # Delete Task Button
-            if st.button(f"Delete Task '{task['title']}'", key=f"delete_{task['title']}"):
-                delete_task(task["title"])
-                st.experimental_rerun()
+    to_do_container = st.container(border=False, height=1500)
+    with to_do_container:
+        task_textbox = st.text_input("Enter task: ", key="task_input")
+        if st.button("Add task"):
+            add_task(st.session_state["task_input"])
 
-            # Add Subtask
-            sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}", key=f"sup_task_{task['title']}")
-            if st.button(f"Add Sub-task to {task['title']}", key=f"add_suptask_{task['title']}"):
-                add_sup_task(sup_task_textbox, task["title"])
+        st.write("Tasks: ")
+    
+        #make expander's
+        for task in st.session_state["task_list"]: 
+            with st.expander(task["title"]): 
+                if st.button("delete this task", key=f"delete_{task['title']}"):
+                    delete_task(task["title"])
+                    st.session_state.rerun_trigger += 1  # Trigger rerun
 
-            # Display Subtasks
-            if task["subtasks"]:
-                st.write("Sub-tasks:")
-                for subtask in task["subtasks"]:
-                    st.checkbox(subtask, key=f"subtask_checkbox_{subtask}")
+                sup_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}") 
+                if st.button(f"Add Sup-task to {task['title']}", key=f"add_suptask_{task['title']}"):
+                    add_sup_task(sup_task_textbox, task["title"]) # add sup-task
+
+            # loading the prograss 
+                total_count = 0
+                check_count = 0 
+    
+                for sup_task in st.session_state["suptask_list"].get(task["title"], []):
+                    total_count += 1
+                    if st.checkbox(sup_task):
+                        check_count += 1
+
+                if total_count > 0:
+                    progress = check_count / total_count
+                    if progress == 1:
+                        st.write("Excellent! You finished this task!")
+                    st.progress(progress)
+
+            # ai helper -> take task and sup-task to chatbot
+                if st.button("AI HELP :robot_face:", key=f"ai_help_{task['title']}"):
+                    chatbot_prompt = f"I have a task called '{task['title']}'."
+                    if st.session_state["suptask_list"].get(task["title"]):
+                        chatbot_prompt += f" It has the following subtasks: {', '.join(st.session_state['suptask_list'][task['title']])}"
+                    st.session_state.messages.append({"role": "user", "content": chatbot_prompt})
+
+                    try:
+                        response = model.generate_content(chatbot_prompt)
+                        assistant_reply = response.text
+
+                    except Exception as e:
+                        response = f"An error occurred: {str(e)}"
+
+            # send to chatbot area
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply}) 
+                    st.session_state.rerun_trigger += 1
