@@ -20,21 +20,35 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def add_sub_task(subtask_list, task_title):
-    if subtask_list:
-        if task_title not in st.session_state["subtask_list"]:
-            st.session_state["subtask_list"][task_title] = []
-        st.session_state["subtask_list"][task_title].append(subtask_list)
-        st.success(f"subtask_list {subtask_list} added under {task_title} !")
-    else:
+    if not subtask_list:
         st.warning("Please enter a subtask_list before adding.")
+        return
+
+    if task_title not in st.session_state["subtask_list"]:
+        st.session_state["subtask_list"][task_title] = []
+
+    if subtask_list in st.session_state["subtask_list"][task_title]:
+        st.error(f"Subtask '{subtask_list}' already exists under '{task_title}'!")
+        return
+    
+    st.session_state["subtask_list"][task_title].append(subtask_list)
+    st.success(f"subtask_list {subtask_list} added under {task_title} !")
 
 def add_task(task_title):
-    if task_title:
-        task = {"title": task_title, "subtasks": [], "completed": False} 
-        st.session_state["task_list"].append(task)
-        st.success("Task added!")
-    else:
-        st.warning("Please enter a task before adding.")
+    if not task_title:
+        st.warning("Please enter a task name before adding.")
+        return
+
+    existing_tasks = [task["title"] for task in st.session_state["task_list"]]
+
+    if task_title in existing_tasks:
+        st.error(f"Task '{task_title}' already exists! Choose a different name.")
+        return
+
+    task = {"title": task_title, "subtasks": [], "completed": False} 
+    st.session_state["task_list"].append(task)
+    st.session_state["success_message"] = f"Task '{task_title}' added successfully!"
+
 
 def delete_task(task_title):
     st.session_state["task_list"] = [task for task in st.session_state["task_list"] if task["title"] != task_title]
@@ -155,7 +169,7 @@ with RCol:
         task_textbox = st.text_input("Enter task: ", key="task_input")
         if st.button("Add task"):
             add_task(st.session_state["task_input"])
-            st.rerun()
+            #st.rerun()
 
         st.write("Tasks: ")
 
@@ -164,13 +178,13 @@ with RCol:
                 # button that delete task
                 if st.button("Delete Task", key=f"delete_{task['title']}"):
                     delete_task(task["title"])
-                    st.rerun()
+                    #st.rerun()
 
                 # button that take input and create sub-task's
                 sub_task_textbox = st.text_input(f"Enter a sub-task for {task['title']}", key=f"input_{task['title']}") 
                 if st.button(f"Add Sub-task to {task['title']}", key=f"add_subtask_{task['title']}"):
                     add_sub_task(sub_task_textbox, task["title"])
-                    st.rerun()
+                    #st.rerun()
 
                 total_count = 0
                 check_count = 0 
@@ -218,4 +232,4 @@ with RCol:
                         assistant_reply = f"An error occurred: {str(e)}"
 
                     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
-                    st.rerun()
+                    #st.rerun()
